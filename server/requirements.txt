@@ -1,0 +1,4 @@
+trilium-py
+litestar[standard]
+pydantic
+python-dotenv
