@@ -24,9 +24,6 @@ class Note(BaseModel):
     parents: list[str]
     attributes: list[NoteAttribute]
 
-class ContentNote(Note):
-    content: Any
-
 class ExpandedNote(BaseModel):
     id: str
     protected: bool

@@ -1,2 +1,2 @@
 from .state import AppEnvironment, AppState
-from .note import Note, NoteAttribute, ContentNote, ExpandedNote
+from .note import Note, NoteAttribute, ExpandedNote
