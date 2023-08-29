@@ -40,7 +40,7 @@ def error_handler(req: Request, exc: Exception) -> Response:
 
 
 app = Litestar(
-    route_handlers=[NotesController],
+    route_handlers=[NotesController, AuthController],
     exception_handlers={500: error_handler},
     state=State(
         {
