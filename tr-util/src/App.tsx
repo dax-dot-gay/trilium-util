@@ -4,6 +4,7 @@ import {
 import "./app.scss";
 import { ApiProvider } from "./components/api";
 import { ApplicationShell } from "./components/shell/ApplicationShell";
+import { Notifications } from "@mantine/notifications";
 
 function App() {
     return (
@@ -16,12 +17,13 @@ function App() {
                     globalStyles(theme) {
                         return {
                             body: {
-                                backgroundColor: theme.colors.dark[8]
-                            }
-                        }
+                                backgroundColor: theme.colors.dark[8],
+                            },
+                        };
                     },
                 }}
             >
+                <Notifications />
                 <ApplicationShell />
             </MantineProvider>
         </ApiProvider>

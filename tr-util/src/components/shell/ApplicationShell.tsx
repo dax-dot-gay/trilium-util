@@ -9,8 +9,8 @@ import {
     Text,
     Box,
 } from "@mantine/core";
-import { MdLogin } from "react-icons/md";
-import { useApiFeatures } from "../../hooks/api";
+import { MdLogin, MdLogout } from "react-icons/md";
+import { useApiFeatures, useApiUtilities } from "../../hooks/api";
 import "./shell.scss";
 import { LoginModal } from "../LoginModal";
 import { useState } from "react";
@@ -18,6 +18,7 @@ import { useState } from "react";
 export function ApplicationShell() {
     const { loggedIn, unauthenticatedViewing } = useApiFeatures();
     const [login, setLogin] = useState(false);
+    const { logout } = useApiUtilities();
     return (
         <AppShell
             className="app"
@@ -32,13 +33,23 @@ export function ApplicationShell() {
                             />
                             <Title order={3}>Trilium Utilities</Title>
                         </Group>
-                        <Button
-                            leftIcon={<MdLogin size={20} />}
-                            variant="subtle"
-                            onClick={() => setLogin(true)}
-                        >
-                            Log In
-                        </Button>
+                        {loggedIn ? (
+                            <Button
+                                leftIcon={<MdLogout size={20} />}
+                                variant="subtle"
+                                onClick={() => logout()}
+                            >
+                                Log Out
+                            </Button>
+                        ) : (
+                            <Button
+                                leftIcon={<MdLogin size={20} />}
+                                variant="subtle"
+                                onClick={() => setLogin(true)}
+                            >
+                                Log In
+                            </Button>
+                        )}
                     </Group>
                 </Header>
             }

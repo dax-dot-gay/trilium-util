@@ -1,7 +1,14 @@
 import { Button, Group, Modal, PasswordInput, Stack } from "@mantine/core";
 import { useApiUtilities } from "../../hooks/api";
-import { MdCheck, MdLock, MdVisibility, MdVisibilityOff } from "react-icons/md";
+import {
+    MdCheck,
+    MdError,
+    MdLock,
+    MdVisibility,
+    MdVisibilityOff,
+} from "react-icons/md";
 import { useEffect, useState } from "react";
+import { notifications } from "@mantine/notifications";
 
 export function LoginModal({
     open,
@@ -39,7 +46,30 @@ export function LoginModal({
                     icon={<MdLock size={16} />}
                 />
                 <Group position="right">
-                    <Button leftIcon={<MdCheck size={16} />}>Log In</Button>
+                    <Button
+                        leftIcon={<MdCheck size={16} />}
+                        onClick={() => {
+                            login(password).then((result) => {
+                                if (result) {
+                                    notifications.show({
+                                        color: "green",
+                                        icon: <MdCheck size={24} />,
+                                        message: "Login successful!",
+                                    });
+                                    setOpen(false);
+                                } else {
+                                    notifications.show({
+                                        color: "red",
+                                        icon: <MdError size={24} />,
+                                        message: "Failed to login.",
+                                    });
+                                    setPassword("");
+                                }
+                            });
+                        }}
+                    >
+                        Log In
+                    </Button>
                 </Group>
             </Stack>
         </Modal>

@@ -64,7 +64,7 @@ class AuthController(Controller):
         )
     
     @post("/logout", guards=[guard_session])
-    async def login(self, app_state: AppState, session: SESSION_TYPE) -> SessionModel:
+    async def logout(self, app_state: AppState, session: SESSION_TYPE) -> SessionModel:
         app_state.session_store.set(session.token, "false", expires_in=86400)
         return SessionModel(
             token=session.token,
