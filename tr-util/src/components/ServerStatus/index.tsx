@@ -18,6 +18,7 @@ import {
     MdDataArray,
     MdFolder,
     MdInfo,
+    MdInfoOutline,
     MdListAlt,
     MdOpenInNew,
     MdSync,
@@ -88,7 +89,11 @@ export function ServerStatus() {
                         disabled={!status.online}
                         radius="xl"
                     >
-                        <MdInfo size={24} />
+                        {open ? (
+                            <MdInfo size={24} />
+                        ) : (
+                            <MdInfoOutline size={24} />
+                        )}
                     </ActionIcon>
                 </Group>
                 <Collapse in={open && status.online}>
