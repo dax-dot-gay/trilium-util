@@ -14,6 +14,7 @@ import { useApiFeatures, useApiUtilities } from "../../hooks/api";
 import "./shell.scss";
 import { LoginModal } from "../LoginModal";
 import { useState } from "react";
+import { ServerStatus } from "../ServerStatus";
 
 export function ApplicationShell() {
     const { loggedIn, unauthenticatedViewing } = useApiFeatures();
@@ -56,7 +57,9 @@ export function ApplicationShell() {
         >
             <Box className="application-content" p="sm">
                 {loggedIn || unauthenticatedViewing ? (
-                    <></>
+                    <Stack spacing="md" className="app-viewable">
+                        <ServerStatus />
+                    </Stack>
                 ) : (
                     <Paper p="lg" radius="sm" className="login-required">
                         <Stack spacing="lg" align="center" justify="center">
