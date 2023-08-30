@@ -18,6 +18,7 @@ class NotesController(Controller):
             info = app_state.api.app_info()
             return TriliumStatus(
                 online=True,
+                url=app_state.api.server_url,
                 appVersion=info["appVersion"],
                 dbVersion=info["dbVersion"],
                 syncVersion=info["syncVersion"],
@@ -28,7 +29,7 @@ class NotesController(Controller):
                 utcDateTime=datetime.fromisoformat(info["utcDateTime"])
             )
         except:
-            return TriliumStatus(online=False)
+            return TriliumStatus(online=False, url=app_state.api.server_url,)
 
     @get("/{note_id:str}")
     async def get_note(self, note_id: str, app_state: AppState) -> Note:

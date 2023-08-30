@@ -4,6 +4,7 @@ from typing import Optional
 
 class TriliumStatus(BaseModel):
     online: bool
+    url: str
     appVersion: Optional[str] = None
     dbVersion: Optional[int] = None
     syncVersion: Optional[int] = None
