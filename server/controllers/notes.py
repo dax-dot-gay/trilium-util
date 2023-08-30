@@ -1,14 +1,34 @@
 from litestar import Controller, get, post
 from litestar.exceptions import *
-from models import AppState, Note, ExpandedNote, NoteAttribute
+from models import AppState, Note, ExpandedNote, NoteAttribute, TriliumStatus
 from datetime import datetime
 from typing import Union
 from litestar.response import Response
 from util.notes import expand_note
+from util.guards import guard_scope
 
 
 class NotesController(Controller):
     path = "/notes"
+    guards = [guard_scope(["privileged", "unprivileged"])]
+
+    @get("/status")
+    async def get_trilium_status(self, app_state: AppState) -> TriliumStatus:
+        try:
+            info = app_state.api.app_info()
+            return TriliumStatus(
+                online=True,
+                appVersion=info["appVersion"],
+                dbVersion=info["dbVersion"],
+                syncVersion=info["syncVersion"],
+                buildDate=datetime.fromisoformat(info["buildDate"]),
+                buildRevision=info["buildRevision"],
+                dataDirectory=info["dataDirectory"],
+                clipperProtocolVersion=info["clipperProtocolVersion"],
+                utcDateTime=datetime.fromisoformat(info["utcDateTime"])
+            )
+        except:
+            return TriliumStatus(online=False)
 
     @get("/{note_id:str}")
     async def get_note(self, note_id: str, app_state: AppState) -> Note:
