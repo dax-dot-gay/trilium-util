@@ -5,7 +5,7 @@ from os import getenv
 from util.etapi import ExtendedETAPI
 from litestar import Litestar, MediaType, Request, Response
 from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
-from litestar.stores.memory import MemoryStore
+from litestar.stores.file import FileStore
 from litestar.datastructures import State
 from litestar.di import Provide
 
@@ -19,7 +19,7 @@ environment: AppEnvironment = {
 }
 
 api = ExtendedETAPI(environment["TRU_SERVER"], environment["TRU_ETAPI_TOKEN"])
-sessions = MemoryStore()
+sessions = FileStore(".sessions")
 
 
 async def depends_state(state: State) -> AppState:
