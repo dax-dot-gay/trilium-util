@@ -15,12 +15,14 @@ class SessionModel(BaseModel):
     token: str
     logged_in: bool
 
-async def dep_session(request: Request, app_state: AppState) -> SessionModel:
+SESSION_TYPE = Union[SessionModel, None]
+
+async def dep_session(request: Request, app_state: AppState) -> SESSION_TYPE:
     current_token = request.headers.get("authorization", None)
     if current_token:
         logged_in = await app_state.session_store.get(current_token, renew_for=86400)
         if logged_in != None:
-            return SessionModel(token=current_token, logged_in=logged_in == "true")
+            return SessionModel(token=current_token, logged_in=logged_in.decode() == "true")
     return None
 
 async def guard_session(connection: ASGIConnection, _: BaseRouteHandler) -> None:
@@ -40,7 +42,7 @@ class AuthController(Controller):
         return AuthRequiredModel(required=app_state.view_passwordless)
     
     @get("/")
-    async def get_session(self, app_state: AppState, session: SessionModel) -> SessionModel:
+    async def get_session(self, app_state: AppState, session: SESSION_TYPE) -> SessionModel:
         if session:
             return session
         
@@ -52,7 +54,7 @@ class AuthController(Controller):
         )
     
     @post("/login", guards=[guard_session])
-    async def login(self, app_state: AppState, data: dict[str, str], session: SessionModel) -> SessionModel:
+    async def login(self, app_state: AppState, data: dict[str, str], session: SESSION_TYPE) -> SessionModel:
         if app_state.env["TRU_PASSWORD"] != data["password"]:
             raise NotAuthorizedException(detail="Incorrect password")
         app_state.session_store.set(session.token, "true", expires_in=86400)
@@ -62,7 +64,7 @@ class AuthController(Controller):
         )
     
     @post("/logout", guards=[guard_session])
-    async def login(self, app_state: AppState, session: SessionModel) -> SessionModel:
+    async def login(self, app_state: AppState, session: SESSION_TYPE) -> SessionModel:
         app_state.session_store.set(session.token, "false", expires_in=86400)
         return SessionModel(
             token=session.token,
