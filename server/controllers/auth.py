@@ -7,6 +7,7 @@ from typing import Union
 from litestar.connection import ASGIConnection
 from litestar.exceptions import NotAuthorizedException
 from litestar.handlers.base import BaseRouteHandler
+from util.guards import guard_scope
 
 class AuthRequiredModel(BaseModel):
     required: bool
@@ -63,7 +64,7 @@ class AuthController(Controller):
             logged_in=True
         )
     
-    @post("/logout", guards=[guard_session])
+    @post("/logout", guards=[guard_session, guard_scope(["privileged"])])
     async def logout(self, app_state: AppState, session: SESSION_TYPE) -> SessionModel:
         await app_state.session_store.set(session.token, "false", expires_in=86400)
         return SessionModel(
