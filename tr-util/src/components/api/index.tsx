@@ -123,13 +123,18 @@ export function ApiProvider({
                                 },
                             }
                         );
-                        return result.success ? result.value : null;
+                        if (result.success) {
+                            setLoggedIn(true);
+                            return result.value;
+                        }
+                        return null as any;
                     },
                     logout: async () => {
                         const result = await request<Session>(
                             "POST",
                             "/auth/logout"
                         );
+                        setLoggedIn(false);
                         return result.success
                             ? result.value
                             : { token: token ?? "", logged_in: loggedIn };

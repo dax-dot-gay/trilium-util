@@ -1,14 +1,9 @@
 import {
-    AppShell,
-    Button,
-    Group,
-    Header,
     MantineProvider,
-    Title,
 } from "@mantine/core";
-import { MdLogin } from "react-icons/md";
 import "./app.scss";
 import { ApiProvider } from "./components/api";
+import { ApplicationShell } from "./components/shell/ApplicationShell";
 
 function App() {
     return (
@@ -18,33 +13,16 @@ function App() {
                 withNormalizeCSS
                 theme={{
                     colorScheme: "dark",
+                    globalStyles(theme) {
+                        return {
+                            body: {
+                                backgroundColor: theme.colors.dark[8]
+                            }
+                        }
+                    },
                 }}
             >
-                <AppShell
-                    className="app"
-                    header={
-                        <Header p="xs" height={60} className="app-header">
-                            <Group position="apart">
-                                <Group spacing="sm" className="app-title">
-                                    <img
-                                        src="/icon.png"
-                                        alt="Application Logo"
-                                        className="app-logo"
-                                    />
-                                    <Title order={3}>Trilium Utilities</Title>
-                                </Group>
-                                <Button
-                                    leftIcon={<MdLogin size={20} />}
-                                    variant="subtle"
-                                >
-                                    Log In
-                                </Button>
-                            </Group>
-                        </Header>
-                    }
-                >
-                    <></>
-                </AppShell>
+                <ApplicationShell />
             </MantineProvider>
         </ApiProvider>
     );
