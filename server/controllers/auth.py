@@ -57,7 +57,7 @@ class AuthController(Controller):
     async def login(self, app_state: AppState, data: dict[str, str], session: SESSION_TYPE) -> SessionModel:
         if app_state.env["TRU_PASSWORD"] != data["password"]:
             raise NotAuthorizedException(detail="Incorrect password")
-        app_state.session_store.set(session.token, "true", expires_in=86400)
+        await app_state.session_store.set(session.token, "true", expires_in=86400)
         return SessionModel(
             token=session.token,
             logged_in=True
@@ -65,7 +65,7 @@ class AuthController(Controller):
     
     @post("/logout", guards=[guard_session])
     async def logout(self, app_state: AppState, session: SESSION_TYPE) -> SessionModel:
-        app_state.session_store.set(session.token, "false", expires_in=86400)
+        await app_state.session_store.set(session.token, "false", expires_in=86400)
         return SessionModel(
             token=session.token,
             logged_in=False
