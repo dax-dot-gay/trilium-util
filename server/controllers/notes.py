@@ -10,9 +10,8 @@ from util.guards import guard_scope
 
 class NotesController(Controller):
     path = "/notes"
-    guards = [guard_scope(["privileged", "unprivileged"])]
 
-    @get("/status")
+    @get("/status", guards=[guard_scope(["privileged", "unprivileged"])])
     async def get_trilium_status(self, app_state: AppState) -> TriliumStatus:
         try:
             info = app_state.api.app_info()
@@ -31,7 +30,7 @@ class NotesController(Controller):
         except:
             return TriliumStatus(online=False, url=app_state.api.server_url,)
 
-    @get("/{note_id:str}")
+    @get("/{note_id:str}", guards=[guard_scope(["privileged", "unprivileged"])])
     async def get_note(self, note_id: str, app_state: AppState) -> Note:
         try:
             note = app_state.api.get_note(note_id)
@@ -76,7 +75,7 @@ class NotesController(Controller):
         
         return Response(content, media_type=note["mime"], status_code=200)
     
-    @get("/{note_id:str}/expanded")
+    @get("/{note_id:str}/expanded", guards=[guard_scope(["privileged", "unprivileged"])])
     async def get_note_expanded(self, note_id: str, app_state: AppState) -> ExpandedNote:
         try:
             return expand_note(note_id, app_state.api)

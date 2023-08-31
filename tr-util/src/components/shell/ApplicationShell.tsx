@@ -15,6 +15,7 @@ import "./shell.scss";
 import { LoginModal } from "../LoginModal";
 import { useState } from "react";
 import { ServerStatus } from "../ServerStatus";
+import { NoteNode } from "../NoteTree";
 
 export function ApplicationShell() {
     const { loggedIn, unauthenticatedViewing } = useApiFeatures();
@@ -59,6 +60,7 @@ export function ApplicationShell() {
                 {loggedIn || unauthenticatedViewing ? (
                     <Stack spacing="md" className="app-viewable">
                         <ServerStatus />
+                        <NoteNode id={"root"} />
                     </Stack>
                 ) : (
                     <Paper p="lg" radius="sm" className="login-required">
