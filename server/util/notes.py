@@ -3,6 +3,7 @@ from models import ExpandedNote, NoteAttribute, NoteExportData, NoteExport, Note
 from datetime import datetime
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 import fnmatch
+import os
 
 
 def expand_note(root: str, api: ETAPI) -> ExpandedNote:
@@ -28,10 +29,10 @@ def expand_note(root: str, api: ETAPI) -> ExpandedNote:
     )
 
 
-def get_notes_to_export(export: NoteExport, api: ETAPI) -> list[NoteExportData]:
+def get_notes_to_export(export: NoteExport, api: ETAPI) -> dict[str, NoteExportData]:
     seen = []
     queue = [export.id]
-    results = []
+    results = {}
     while len(queue) > 0:
         proc = queue.pop(0)
         seen.append(proc)
@@ -55,7 +56,7 @@ def get_notes_to_export(export: NoteExport, api: ETAPI) -> list[NoteExportData]:
                 continue
         else:
             continue
-        
+
         if not metadata.type in ["text", "book", "code", "mermaid", "canvas", "file", "image"]:
             continue
 
@@ -70,7 +71,7 @@ def get_notes_to_export(export: NoteExport, api: ETAPI) -> list[NoteExportData]:
         ):
             continue
         if metadata.type == "image" and (
-            not "file.image" in export.fileTypes or not "image" in export.noteTypes
+            not "image" in export.fileTypes or not "image" in export.noteTypes
         ):
             continue
 
@@ -80,8 +81,7 @@ def get_notes_to_export(export: NoteExport, api: ETAPI) -> list[NoteExportData]:
         else:
             content = urlsafe_b64encode(content_raw).decode()
 
-        results.append(
-            NoteExportData(
+        results[metadata.id] = NoteExportData(
                 id=metadata.id,
                 metadata=metadata,
                 note_type=note_type,
@@ -89,7 +89,6 @@ def get_notes_to_export(export: NoteExport, api: ETAPI) -> list[NoteExportData]:
                 children=metadata.children,
                 content=content,
             )
-        )
 
         if export.exportChildren:
             queue.extend([c for c in metadata.children if not c in seen])
@@ -107,3 +106,35 @@ def get_notes_to_export(export: NoteExport, api: ETAPI) -> list[NoteExportData]:
             )
 
     return results
+
+def generate_note_subtree(notes: dict[str, NoteExportData], parent: str = None) -> list:
+    valid_parents = []
+    for note in notes.values():
+        valid_parents.extend(note.parents)
+    result = []
+    for note in notes.values():
+        if parent in note.parents or (all([not i in valid_parents for i in note.parents]) and parent == None):
+            result.append({
+                "id": note.id,
+                "title": note.metadata.title,
+                "children": generate_note_subtree(notes, parent=note.id)
+            })
+    return result
+
+def generate_html_toc(node: dict, parent: list[str], current: int) -> str:
+    return "<div class='toc-node'><a class='toc-node-title' href='#{node_id}'>{node_count} - {node_title}</a><div class='toc-node-children'>{node_children}</div></div>".format(
+        node_id=node["id"],
+        node_title=node["title"],
+        node_children="".join([generate_html_toc(node["children"][i], [*parent, str(current)], i + 1) for i in range(len(node["children"]))]),
+        node_count=".".join([*parent, str(current)])
+    )
+
+def generate_html_export(export: NoteExport, note_data: dict[str, NoteExportData], subtree: list[dict]) -> str:
+    with open(os.path.join("template", "template.html"), "r") as template:
+        tmpstr = template.read()
+
+    return tmpstr.format(
+        _title=export.title,
+        _toc="".join([generate_html_toc(subtree[i], [], i + 1) for i in range(len(subtree))]),
+        _content=""
+    ).replace("$$$<", "{").replace(">$$$", "}")

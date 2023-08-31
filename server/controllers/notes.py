@@ -60,5 +60,5 @@ class NotesController(Controller):
             raise NotFoundException(detail="Invalid note ID")
     
     @post("/{note_id:str}/export", guards=[guard_scope(["privileged"])])
-    async def export_note(self, note_id: str, app_state: AppState, data: NoteExport) -> list:
+    async def export_note(self, note_id: str, app_state: AppState, data: NoteExport) -> dict:
         return get_notes_to_export(data, app_state.api)
