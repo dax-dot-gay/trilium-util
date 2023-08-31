@@ -1,6 +1,11 @@
 import { useForm } from "@mantine/form";
 import { useApiFunctions } from "../../hooks/api";
-import { FileTypes, Note, NoteTypeExportable } from "../../types/note";
+import {
+    FileTypes,
+    Note,
+    NoteTypeExportable,
+    fileTypesFeatures,
+} from "../../types/note";
 import {
     Button,
     Checkbox,
@@ -11,8 +16,9 @@ import {
     Switch,
     TextInput,
 } from "@mantine/core";
-import { useEffect } from "react";
-import { MdCloudDownload, MdEdit } from "react-icons/md";
+import { useEffect, useState } from "react";
+import { MdCloudDownload, MdEdit, MdError } from "react-icons/md";
+import { notifications } from "@mantine/notifications";
 
 export function ExportModal({
     exporting,
@@ -22,6 +28,7 @@ export function ExportModal({
     setExporting: (id: Note | null) => void;
 }) {
     const { post } = useApiFunctions();
+    const [loading, setLoading] = useState(false);
     const form = useForm<{
         title: string;
         exportChildren: boolean;
@@ -46,7 +53,33 @@ export function ExportModal({
             onClose={() => setExporting(null)}
             title={exporting ? `Export: ${exporting.title}` : ""}
         >
-            <form onSubmit={form.onSubmit((values) => console.log(values))}>
+            <form
+                onSubmit={form.onSubmit((values) => {
+                    setLoading(true);
+                    post<any[]>(`/notes/${exporting?.id}/export`, {
+                        data: {
+                            id: exporting?.id,
+                            title: values.title,
+                            exportChildren: values.exportChildren,
+                            exportRelations: values.exportRelations,
+                            noteTypes: values.noteTypes,
+                            fileTypes: values.fileExtensions,
+                            mimeTypeMapping: fileTypesFeatures,
+                        },
+                    }).then((result) => {
+                        setLoading(false);
+                        if (result.success) {
+                            console.log(result.value);
+                        } else {
+                            notifications.show({
+                                color: "red",
+                                icon: <MdError size={24} />,
+                                message: "Failed to export note.",
+                            });
+                        }
+                    });
+                })}
+            >
                 <Stack spacing="sm">
                     <TextInput
                         label="Export Title"
@@ -97,6 +130,8 @@ export function ExportModal({
                         <Button
                             leftIcon={<MdCloudDownload size={20} />}
                             type="submit"
+                            loading={loading}
+                            disabled={loading}
                         >
                             Export
                         </Button>

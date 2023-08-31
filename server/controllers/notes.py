@@ -1,10 +1,10 @@
 from litestar import Controller, get, post
 from litestar.exceptions import *
-from models import AppState, Note, ExpandedNote, NoteAttribute, TriliumStatus
+from models import AppState, Note, ExpandedNote, NoteAttribute, TriliumStatus, NoteExport
 from datetime import datetime
 from typing import Union
 from litestar.response import Response
-from util.notes import expand_note
+from util.notes import expand_note, get_notes_to_export
 from util.guards import guard_scope
 
 
@@ -36,30 +36,7 @@ class NotesController(Controller):
             note = app_state.api.get_note(note_id)
         except:
             raise NotFoundException(detail="Invalid note ID")
-        return Note(
-            id=note["noteId"],
-            protected=note["isProtected"],
-            title=note["title"],
-            type=note["type"],
-            mime_type=note["mime"],
-            created=datetime.fromisoformat(note["dateCreated"]),
-            modified=datetime.fromisoformat(note["dateModified"]),
-            utc_created=datetime.fromisoformat(note["utcDateCreated"]),
-            utc_modified=datetime.fromisoformat(note["utcDateModified"]),
-            children=[i for i in note["childNoteIds"] if not "_" in i],
-            parents=[i for i in note["parentNoteIds"] if not "_" in i],
-            attributes=[
-                NoteAttribute(
-                    id=a["attributeId"],
-                    note_id=a["noteId"],
-                    type=a["type"],
-                    name=a["name"],
-                    value=a["value"],
-                    utc_modified=datetime.fromisoformat(a["utcDateModified"]),
-                )
-                for a in note["attributes"]
-            ],
-        )
+        return Note.from_api(note)
     
     @get("/{note_id:str}/content")
     async def get_note_content(self, note_id: str, app_state: AppState) -> Response:
@@ -81,3 +58,7 @@ class NotesController(Controller):
             return expand_note(note_id, app_state.api)
         except:
             raise NotFoundException(detail="Invalid note ID")
+    
+    @post("/{note_id:str}/export", guards=[guard_scope(["privileged"])])
+    async def export_note(self, note_id: str, app_state: AppState, data: NoteExport) -> list:
+        return get_notes_to_export(data, app_state.api)
