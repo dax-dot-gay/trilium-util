@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Note } from "../../types/note";
-import { useApiFunctions } from "../../hooks/api";
+import { useApiFeatures, useApiFunctions } from "../../hooks/api";
 import {
     ActionIcon,
     Collapse,
@@ -12,7 +12,8 @@ import {
     useMantineTheme,
 } from "@mantine/core";
 import * as BoxIcons from "react-icons/bi";
-import { MdExpandLess, MdExpandMore } from "react-icons/md";
+import { MdCloudDownload, MdExpandLess, MdExpandMore } from "react-icons/md";
+import { ExportModal } from "../ExportModal";
 
 export function NoteIcon({ note, size }: { note: Note; size?: number }) {
     const IconComponent = useMemo(() => {
@@ -68,6 +69,8 @@ export function NoteNode({ id }: { id: string }) {
     const [expanded, setExpanded] = useState(false);
     const { get } = useApiFunctions();
     const theme = useMantineTheme();
+    const { loggedIn } = useApiFeatures();
+    const [exporting, setExporting] = useState<Note | null>(null);
 
     useEffect(() => {
         get<Note>(`/notes/${id}`).then((result) =>
@@ -93,18 +96,28 @@ export function NoteNode({ id }: { id: string }) {
                             {metadata.title}
                         </Text>
                     </Group>
-                    {metadata.children.length > 0 && (
-                        <ActionIcon
-                            size="lg"
-                            onClick={() => setExpanded(!expanded)}
-                        >
-                            {expanded ? (
-                                <MdExpandLess size={20} />
-                            ) : (
-                                <MdExpandMore size={20} />
-                            )}
-                        </ActionIcon>
-                    )}
+                    <Group spacing="md">
+                        {loggedIn && (
+                            <ActionIcon
+                                size="lg"
+                                onClick={() => setExporting(metadata)}
+                            >
+                                <MdCloudDownload size={20} />
+                            </ActionIcon>
+                        )}
+                        {metadata.children.length > 0 && (
+                            <ActionIcon
+                                size="lg"
+                                onClick={() => setExpanded(!expanded)}
+                            >
+                                {expanded ? (
+                                    <MdExpandLess size={20} />
+                                ) : (
+                                    <MdExpandMore size={20} />
+                                )}
+                            </ActionIcon>
+                        )}
+                    </Group>
                 </Group>
                 <Collapse in={expanded}>
                     <Stack spacing="sm">
@@ -114,6 +127,7 @@ export function NoteNode({ id }: { id: string }) {
                     </Stack>
                 </Collapse>
             </Stack>
+            <ExportModal exporting={exporting} setExporting={setExporting} />
         </Paper>
     ) : (
         <Skeleton height={128} radius="sm" />

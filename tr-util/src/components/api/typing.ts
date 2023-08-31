@@ -36,7 +36,3 @@ export type ApiContextType = {
 };
 
 export const ApiContext = createContext<ApiContextType>(null as any);
-
-export function useApi(): ApiContextType {
-    return useContext(ApiContext);
-}
