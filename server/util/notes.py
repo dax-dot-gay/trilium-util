@@ -4,6 +4,7 @@ from datetime import datetime
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 import fnmatch
 import os
+import json
 
 
 def expand_note(root: str, api: ETAPI) -> ExpandedNote:
@@ -107,27 +108,52 @@ def get_notes_to_export(export: NoteExport, api: ETAPI) -> dict[str, NoteExportD
 
     return results
 
-def generate_note_subtree(notes: dict[str, NoteExportData], parent: str = None) -> list:
+def generate_note_subtree(notes: dict[str, NoteExportData], parent: str = None, parent_count: list[str] = []) -> list:
     valid_parents = []
     for note in notes.values():
         valid_parents.extend(note.parents)
     result = []
+    ct = 1
     for note in notes.values():
         if parent in note.parents or (all([not i in valid_parents for i in note.parents]) and parent == None):
             result.append({
                 "id": note.id,
                 "title": note.metadata.title,
-                "children": generate_note_subtree(notes, parent=note.id)
+                "reference": [*parent_count, str(ct)],
+                "children": generate_note_subtree(notes, parent=note.id, parent_count=[*parent_count, str(ct)])
             })
+            ct += 1
     return result
 
-def generate_html_toc(node: dict, parent: list[str], current: int) -> str:
+def generate_html_toc(node: dict) -> str:
     return "<div class='toc-node'><a class='toc-node-title' href='#{node_id}'>{node_count} - {node_title}</a><div class='toc-node-children'>{node_children}</div></div>".format(
         node_id=node["id"],
         node_title=node["title"],
-        node_children="".join([generate_html_toc(node["children"][i], [*parent, str(current)], i + 1) for i in range(len(node["children"]))]),
-        node_count=".".join([*parent, str(current)])
+        node_children="".join([generate_html_toc(node["children"][i]) for i in range(len(node["children"]))]),
+        node_count=".".join(node["reference"])
     )
+
+def generate_html_content(notes: dict[str, NoteExportData], subtree: dict) -> str:
+    note = notes[subtree["id"]]
+    if note.metadata.type == "text":
+        content = note.content
+    elif note.metadata.type == "book":
+        content = ""
+    elif note.metadata.type == "code":
+        content = f"<div class='content-code'>{note.content}</div>"
+    elif note.metadata.type == "mermaid":
+        content = f"<pre class='mermaid'>{note.content}</pre>"
+    elif note.metadata.type == "canvas":
+        content = json.loads(note.content)["svg"]
+    elif note.metadata.type == "image":
+        if note.metadata.mime_type == "image/svg+xml":
+            content = "<svg" + note.content.split(">\n<svg")[1]
+        else:
+            content = f"<img src='data:{note.metadata.mime_type}{';base64' if not 'xml' in note.metadata.mime_type else ''},{note.content}'>"
+    else:
+        content = f"<div class='raw-content'>{note.content}</div>"
+    
+    return f"<div class='html-content'><h{len(subtree['reference']) if len(subtree['reference']) < 6 else 6}>{'.'.join(subtree['reference'])} - {note.metadata.title}</h{len(subtree['reference']) if len(subtree['reference']) < 6 else 6}><div class='contents'>{content}</div><div class='content-children'>{''.join([generate_html_content(notes, child) for child in subtree['children']])}</div></div>"
 
 def generate_html_export(export: NoteExport, note_data: dict[str, NoteExportData], subtree: list[dict]) -> str:
     with open(os.path.join("template", "template.html"), "r") as template:
@@ -135,6 +161,6 @@ def generate_html_export(export: NoteExport, note_data: dict[str, NoteExportData
 
     return tmpstr.format(
         _title=export.title,
-        _toc="".join([generate_html_toc(subtree[i], [], i + 1) for i in range(len(subtree))]),
-        _content=""
+        _toc="".join([generate_html_toc(subtree[i]) for i in range(len(subtree))]),
+        _content="".join([generate_html_content(note_data, i) for i in subtree])
     ).replace("$$$<", "{").replace(">$$$", "}")
