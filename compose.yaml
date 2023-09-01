@@ -1,0 +1,12 @@
+services:
+  server:
+    image: itecx/trilium-util:latest
+    ports:
+      - 8080:80
+    volumes:
+      - ./exports:/exports
+    environment:
+      - TRU_SERVER=TRILIUM SYNC SERVER
+      - TRU_ETAPI_TOKEN=TRILIUM ETAPI TOKEN
+      - TRU_PASSWORD=INTERFACE PASSWORD
+      - TRU_PASSWORDLESS_VIEWING=false

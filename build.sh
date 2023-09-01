@@ -7,4 +7,4 @@ cd ..
 cp -r server dist/server
 rm dist/server/.env
 
-docker build -t trilium-util:$1 .
+docker build -t $1 .
