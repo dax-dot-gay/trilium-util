@@ -1,0 +1,37 @@
+{
+  "listeners": {
+    "*:80": {
+      "pass": "routes"
+    }
+  },
+
+  "routes": [
+    {
+      "match": {
+        "uri": "/api/*"
+      },
+      "action": {
+        "rewrite": "`${uri.split('/api')[1]}`",
+        "pass": "applications/starlette"
+      }
+    },
+    {
+      "match": {
+        "uri": "/*"
+      },
+
+      "action": {
+        "share": "/etc/trilium/client/$uri"
+      }
+    }
+  ],
+
+  "applications": {
+    "starlette": {
+      "type": "python 3.11",
+      "path": "/etc/trilium/server/",
+      "module": "app",
+      "callable": "app"
+    }
+  }
+}

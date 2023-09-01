@@ -4,3 +4,4 @@ pydantic
 python-dotenv
 requests
 bs4
+starlette[full]

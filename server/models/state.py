@@ -9,6 +9,7 @@ class AppEnvironment(TypedDict):
     TRU_ETAPI_TOKEN: str
     TRU_PASSWORD: str
     TRU_PASSWORDLESS_VIEWING: str
+    TRU_EXPORTS: str
 
 class AppState(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)

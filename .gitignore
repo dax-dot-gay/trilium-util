@@ -162,3 +162,4 @@ cython_debug/
 server/.sessions/*
 server/test/*
 server/exports/*
+exports

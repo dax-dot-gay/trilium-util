@@ -4,8 +4,8 @@ from dotenv import load_dotenv
 from os import getenv
 from util.etapi import ExtendedETAPI
 from litestar import Litestar, MediaType, Request, Response
-from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR
-from litestar.stores.file import FileStore
+from litestar.status_codes import HTTP_500_INTERNAL_SERVER_ERROR, HTTP_404_NOT_FOUND
+from litestar.stores.memory import MemoryStore
 from litestar.datastructures import State
 from litestar.di import Provide
 
@@ -16,10 +16,11 @@ environment: AppEnvironment = {
     "TRU_ETAPI_TOKEN": getenv("TRU_ETAPI_TOKEN"),
     "TRU_PASSWORD": getenv("TRU_PASSWORD", "password"),
     "TRU_PASSWORDLESS_VIEWING": getenv("TRU_PASSWORDLESS_VIEWING", "false"),
+    "TRU_EXPORTS": getenv("TRU_EXPORTS", "/exports")
 }
 
 api = ExtendedETAPI(environment["TRU_SERVER"], environment["TRU_ETAPI_TOKEN"])
-sessions = FileStore(".sessions")
+sessions = MemoryStore()
 
 
 async def depends_state(state: State) -> AppState:
@@ -38,10 +39,21 @@ def error_handler(req: Request, exc: Exception) -> Response:
         status_code=status_code,
     )
 
+def error_handler_notfound(req: Request, exc: Exception) -> Response:
+    """404 Handler"""
+    status_code = getattr(exc, "status_code", HTTP_404_NOT_FOUND)
+    detail = req.url._url
+
+    return Response(
+        media_type=MediaType.TEXT,
+        content=detail,
+        status_code=status_code,
+    )
+
 
 app = Litestar(
     route_handlers=[NotesController, AuthController],
-    exception_handlers={500: error_handler},
+    exception_handlers={500: error_handler, 404: error_handler_notfound},
     state=State(
         {
             "env": environment,

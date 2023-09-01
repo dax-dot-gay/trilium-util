@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import { createContext } from "react";
 import { Session } from "../../types/auth";
 
 export type ApiResponse<T = any> =
