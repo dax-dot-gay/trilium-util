@@ -6,7 +6,9 @@ services:
     volumes:
       - ./exports:/exports
     environment:
-      - TRU_SERVER=TRILIUM SYNC SERVER
-      - TRU_ETAPI_TOKEN=TRILIUM ETAPI TOKEN
-      - TRU_PASSWORD=INTERFACE PASSWORD
+      - TRU_SERVER=
+      - TRU_ETAPI_TOKEN=
+      - TRU_PASSWORD=
       - TRU_PASSWORDLESS_VIEWING=false
+    labels:
+      kompose.service.type: nodeport

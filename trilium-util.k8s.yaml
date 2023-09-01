@@ -4,6 +4,7 @@ kind: Service
 metadata:
   annotations:
     kompose.cmd: kompose convert -f compose.yaml -o trilium-util.k8s.yaml
+    kompose.service.type: nodeport
     kompose.version: 1.28.0 (HEAD)
   creationTimestamp: null
   labels:
@@ -16,6 +17,7 @@ spec:
       targetPort: 80
   selector:
     io.kompose.service: server
+  type: NodePort
 status:
   loadBalancer: {}
 
@@ -25,6 +27,7 @@ kind: Deployment
 metadata:
   annotations:
     kompose.cmd: kompose convert -f compose.yaml -o trilium-util.k8s.yaml
+    kompose.service.type: nodeport
     kompose.version: 1.28.0 (HEAD)
   creationTimestamp: null
   labels:
@@ -41,6 +44,7 @@ spec:
     metadata:
       annotations:
         kompose.cmd: kompose convert -f compose.yaml -o trilium-util.k8s.yaml
+        kompose.service.type: nodeport
         kompose.version: 1.28.0 (HEAD)
       creationTimestamp: null
       labels:
@@ -50,13 +54,13 @@ spec:
       containers:
         - env:
             - name: TRU_ETAPI_TOKEN
-              value: TRILIUM ETAPI TOKEN
+              value: v50VfWqE3bjU_nk+SUp8f5V8goQj+e5VbFxbA1Vc31EABo8wYKah8MOA=
             - name: TRU_PASSWORD
-              value: INTERFACE PASSWORD
+              value: test
             - name: TRU_PASSWORDLESS_VIEWING
               value: "false"
             - name: TRU_SERVER
-              value: TRILIUM SYNC SERVER
+              value: https://trilium.dax.gay
           image: itecx/trilium-util:latest
           name: server
           ports:
