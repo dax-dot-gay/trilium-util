@@ -1,14 +1,14 @@
 services:
-  server:
+  trilium-util:
     image: itecx/trilium-util:latest
     ports:
-      - 8080:80
+      - 80:80
     volumes:
       - ./exports:/exports
     environment:
-      - TRU_SERVER=
-      - TRU_ETAPI_TOKEN=
-      - TRU_PASSWORD=
+      - TRU_SERVER=null
+      - TRU_ETAPI_TOKEN=null
+      - TRU_PASSWORD=null
       - TRU_PASSWORDLESS_VIEWING=false
     labels:
       kompose.service.type: nodeport

@@ -8,15 +8,15 @@ metadata:
     kompose.version: 1.28.0 (HEAD)
   creationTimestamp: null
   labels:
-    io.kompose.service: server
-  name: server
+    io.kompose.service: trilium-util
+  name: trilium-util
 spec:
   ports:
-    - name: "8080"
-      port: 8080
+    - name: "80"
+      port: 80
       targetPort: 80
   selector:
-    io.kompose.service: server
+    io.kompose.service: trilium-util
   type: NodePort
 status:
   loadBalancer: {}
@@ -31,13 +31,13 @@ metadata:
     kompose.version: 1.28.0 (HEAD)
   creationTimestamp: null
   labels:
-    io.kompose.service: server
-  name: server
+    io.kompose.service: trilium-util
+  name: trilium-util
 spec:
   replicas: 1
   selector:
     matchLabels:
-      io.kompose.service: server
+      io.kompose.service: trilium-util
   strategy:
     type: Recreate
   template:
@@ -49,31 +49,31 @@ spec:
       creationTimestamp: null
       labels:
         io.kompose.network/trilium-util-default: "true"
-        io.kompose.service: server
+        io.kompose.service: trilium-util
     spec:
       containers:
         - env:
             - name: TRU_ETAPI_TOKEN
-              value: v50VfWqE3bjU_nk+SUp8f5V8goQj+e5VbFxbA1Vc31EABo8wYKah8MOA=
+              value: "null"
             - name: TRU_PASSWORD
-              value: test
+              value: "null"
             - name: TRU_PASSWORDLESS_VIEWING
               value: "false"
             - name: TRU_SERVER
-              value: https://trilium.dax.gay
+              value: "null"
           image: itecx/trilium-util:latest
-          name: server
+          name: trilium-util
           ports:
             - containerPort: 80
           resources: {}
           volumeMounts:
             - mountPath: /exports
-              name: server-claim0
+              name: trilium-util-claim0
       restartPolicy: Always
       volumes:
-        - name: server-claim0
+        - name: trilium-util-claim0
           persistentVolumeClaim:
-            claimName: server-claim0
+            claimName: trilium-util-claim0
 status: {}
 
 ---
@@ -82,8 +82,8 @@ kind: PersistentVolumeClaim
 metadata:
   creationTimestamp: null
   labels:
-    io.kompose.service: server-claim0
-  name: server-claim0
+    io.kompose.service: trilium-util-claim0
+  name: trilium-util-claim0
 spec:
   accessModes:
     - ReadWriteOnce
@@ -91,20 +91,4 @@ spec:
     requests:
       storage: 100Mi
 status: {}
-
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  creationTimestamp: null
-  name: trilium-util-default
-spec:
-  ingress:
-    - from:
-        - podSelector:
-            matchLabels:
-              io.kompose.network/trilium-util-default: "true"
-  podSelector:
-    matchLabels:
-      io.kompose.network/trilium-util-default: "true"
 
