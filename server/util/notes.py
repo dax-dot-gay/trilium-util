@@ -1,10 +1,11 @@
 from trilium_py.client import ETAPI
 from models import ExpandedNote, NoteAttribute, NoteExportData, NoteExport, Note
 from datetime import datetime
-from base64 import urlsafe_b64encode, urlsafe_b64decode
+from base64 import b64encode
 import fnmatch
 import os
 import json
+from bs4 import BeautifulSoup
 
 
 def expand_note(root: str, api: ETAPI) -> ExpandedNote:
@@ -58,7 +59,15 @@ def get_notes_to_export(export: NoteExport, api: ETAPI) -> dict[str, NoteExportD
         else:
             continue
 
-        if not metadata.type in ["text", "book", "code", "mermaid", "canvas", "file", "image"]:
+        if not metadata.type in [
+            "text",
+            "book",
+            "code",
+            "mermaid",
+            "canvas",
+            "file",
+            "image",
+        ]:
             continue
 
         if (
@@ -80,16 +89,16 @@ def get_notes_to_export(export: NoteExport, api: ETAPI) -> dict[str, NoteExportD
         if type(content_raw) == str:
             content = content_raw
         else:
-            content = urlsafe_b64encode(content_raw).decode()
+            content = b64encode(content_raw).decode()
 
         results[metadata.id] = NoteExportData(
-                id=metadata.id,
-                metadata=metadata,
-                note_type=note_type,
-                parents=metadata.parents,
-                children=metadata.children,
-                content=content,
-            )
+            id=metadata.id,
+            metadata=metadata,
+            note_type=note_type,
+            parents=metadata.parents,
+            children=metadata.children,
+            content=content,
+        )
 
         if export.exportChildren:
             queue.extend([c for c in metadata.children if not c in seen])
@@ -108,30 +117,43 @@ def get_notes_to_export(export: NoteExport, api: ETAPI) -> dict[str, NoteExportD
 
     return results
 
-def generate_note_subtree(notes: dict[str, NoteExportData], parent: str = None, parent_count: list[str] = []) -> list:
-    valid_parents = []
-    for note in notes.values():
-        valid_parents.extend(note.parents)
+
+def generate_note_subtree(
+    notes: dict[str, NoteExportData], parent: str = None, parent_count: list[str] = []
+) -> list:
     result = []
     ct = 1
     for note in notes.values():
-        if parent in note.parents or (all([not i in valid_parents for i in note.parents]) and parent == None):
-            result.append({
-                "id": note.id,
-                "title": note.metadata.title,
-                "reference": [*parent_count, str(ct)],
-                "children": generate_note_subtree(notes, parent=note.id, parent_count=[*parent_count, str(ct)])
-            })
+        if parent in note.parents or (
+            all([not i in notes.keys() for i in note.parents]) and parent == None
+        ):
+            result.append(
+                {
+                    "id": note.id,
+                    "title": note.metadata.title,
+                    "reference": [*parent_count, str(ct)],
+                    "children": generate_note_subtree(
+                        notes, parent=note.id, parent_count=[*parent_count, str(ct)]
+                    ),
+                }
+            )
             ct += 1
     return result
+
 
 def generate_html_toc(node: dict) -> str:
     return "<div class='toc-node'><a class='toc-node-title' href='#{node_id}'>{node_count} - {node_title}</a><div class='toc-node-children'>{node_children}</div></div>".format(
         node_id=node["id"],
         node_title=node["title"],
-        node_children="".join([generate_html_toc(node["children"][i]) for i in range(len(node["children"]))]),
-        node_count=".".join(node["reference"])
+        node_children="".join(
+            [
+                generate_html_toc(node["children"][i])
+                for i in range(len(node["children"]))
+            ]
+        ),
+        node_count=".".join(node["reference"]),
     )
+
 
 def generate_html_content(notes: dict[str, NoteExportData], subtree: dict) -> str:
     note = notes[subtree["id"]]
@@ -140,7 +162,9 @@ def generate_html_content(notes: dict[str, NoteExportData], subtree: dict) -> st
     elif note.metadata.type == "book":
         content = ""
     elif note.metadata.type == "code":
-        content = f"<div class='content-code'>{note.content}</div>"
+        content = "<div class='content-code'>{content}</div>".format(
+            content=note.content.replace("\n", "<br>")
+        ).replace("    ", "<span style='margin-right: 32px;'></span>").replace("  ", "<span style='margin-right: 16px;'></span>")
     elif note.metadata.type == "mermaid":
         content = f"<pre class='mermaid'>{note.content}</pre>"
     elif note.metadata.type == "canvas":
@@ -152,15 +176,38 @@ def generate_html_content(notes: dict[str, NoteExportData], subtree: dict) -> st
             content = f"<img src='data:{note.metadata.mime_type}{';base64' if not 'xml' in note.metadata.mime_type else ''},{note.content}'>"
     else:
         content = f"<div class='raw-content'>{note.content}</div>"
-    
-    return f"<div class='html-content'><h{len(subtree['reference']) if len(subtree['reference']) < 6 else 6}>{'.'.join(subtree['reference'])} - {note.metadata.title}</h{len(subtree['reference']) if len(subtree['reference']) < 6 else 6}><div class='contents'>{content}</div><div class='content-children'>{''.join([generate_html_content(notes, child) for child in subtree['children']])}</div></div>"
 
-def generate_html_export(export: NoteExport, note_data: dict[str, NoteExportData], subtree: list[dict]) -> str:
+    return f"<div class='html-content'><h{len(subtree['reference']) if len(subtree['reference']) < 6 else 6} id='{note.id}'>{'.'.join(subtree['reference'])} - {note.metadata.title}</h{len(subtree['reference']) if len(subtree['reference']) < 6 else 6}><div class='contents'>{content}</div><div class='content-children'>{''.join([generate_html_content(notes, child) for child in subtree['children']])}</div></div>"
+
+
+def generate_html_export(
+    export: NoteExport, note_data: dict[str, NoteExportData], subtree: list[dict]
+) -> str:
     with open(os.path.join("template", "template.html"), "r") as template:
         tmpstr = template.read()
 
-    return tmpstr.format(
-        _title=export.title,
-        _toc="".join([generate_html_toc(subtree[i]) for i in range(len(subtree))]),
-        _content="".join([generate_html_content(note_data, i) for i in subtree])
-    ).replace("$$$<", "{").replace(">$$$", "}")
+    return (
+        tmpstr.format(
+            _title=export.title,
+            _toc="".join([generate_html_toc(subtree[i]) for i in range(len(subtree))]),
+            _content="".join([generate_html_content(note_data, i) for i in subtree]),
+        )
+        .replace("$$$<", "{")
+        .replace(">$$$", "}")
+    )
+
+
+def translate_html_export_links(raw_html: str, notes: dict[str, NoteExportData]) -> str:
+    soup = BeautifulSoup(raw_html, "html.parser")
+    for a in soup.find_all("a", class_="reference-link"):
+        a["href"] = "#" + a["data-note-path"].split("/")[-1]
+
+    for i in soup.find_all("img"):
+        if i["src"].startswith("api/images"):
+            image_data = notes.get(i["src"].split("/")[2], None)
+            if image_data:
+                i[
+                    "src"
+                ] = f"data:{image_data.metadata.mime_type};base64,{image_data.content}"
+
+    return soup.prettify()

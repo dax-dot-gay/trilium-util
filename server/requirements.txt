@@ -3,3 +3,4 @@ litestar[standard]
 pydantic
 python-dotenv
 requests
+bs4

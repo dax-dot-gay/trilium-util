@@ -8,7 +8,7 @@ import json
 load_dotenv()
 
 EXPORT = NoteExport(
-    id="root",
+    id="3Nsn3Wbc72ke",
     title="Test Export",
     exportChildren=True,
     exportRelations=True,
@@ -41,6 +41,6 @@ export_subtree = generate_note_subtree(export_data)
 with open(path.join("test", "exportSubtree.json"), "w") as f:
     json.dump(export_subtree, f, indent=4)
 
-export_html = generate_html_export(EXPORT, export_data, export_subtree)
+export_html = translate_html_export_links(generate_html_export(EXPORT, export_data, export_subtree), export_data)
 with open(path.join("test", "exportHTML.html"), "w") as f:
     f.write(export_html)
