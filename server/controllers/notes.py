@@ -2,10 +2,11 @@ from litestar import Controller, get, post
 from litestar.exceptions import *
 from models import AppState, Note, ExpandedNote, NoteAttribute, TriliumStatus, NoteExport
 from datetime import datetime
-from typing import Union
-from litestar.response import Response
-from util.notes import expand_note, get_notes_to_export
+import os
+from litestar.response import Response, File
+from util.notes import *
 from util.guards import guard_scope
+from secrets import token_urlsafe
 
 
 class NotesController(Controller):
@@ -60,5 +61,21 @@ class NotesController(Controller):
             raise NotFoundException(detail="Invalid note ID")
     
     @post("/{note_id:str}/export", guards=[guard_scope(["privileged"])])
-    async def export_note(self, note_id: str, app_state: AppState, data: NoteExport) -> dict:
-        return get_notes_to_export(data, app_state.api)
+    async def export_note(self, app_state: AppState, data: NoteExport) -> dict:
+        export_data =  get_notes_to_export(data, app_state.api)
+        export_subtree = generate_note_subtree(export_data)
+        raw_html = generate_html_export(data, export_data, export_subtree)
+        translated_html = translate_html_export_links(raw_html, export_data)
+        os.makedirs("exports", exist_ok=True)
+        export_id = token_urlsafe(8)
+        with open(os.path.join("exports", f"export_{export_id}.html"), "w") as f:
+            f.write(translated_html)
+        return {"id": export_id}
+    
+    @get("/exports/{export:str}")
+    async def get_exported_note(self, export: str) -> File:
+        if not os.path.exists(os.path.join("exports", f"export_{export}.html")):
+            raise NotFoundException(detail="Export does not exist")
+        return File(os.path.join("exports", f"export_{export}.html"), media_type="text/html", filename=f"export_{export}.html")
+        
+

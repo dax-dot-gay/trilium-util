@@ -45,7 +45,9 @@ export function ExportModal({
         },
     });
 
-    useEffect(() => form.reset(), [exporting?.id]);
+    useEffect(() => {
+        form.reset();
+    }, [exporting?.id]);
 
     return (
         <Modal
@@ -56,7 +58,7 @@ export function ExportModal({
             <form
                 onSubmit={form.onSubmit((values) => {
                     setLoading(true);
-                    post<any[]>(`/notes/${exporting?.id}/export`, {
+                    post<{ id: string }>(`/notes/${exporting?.id}/export`, {
                         data: {
                             id: exporting?.id,
                             title: values.title,
@@ -69,7 +71,11 @@ export function ExportModal({
                     }).then((result) => {
                         setLoading(false);
                         if (result.success) {
-                            console.log(result.value);
+                            window.open(
+                                `/api/notes/exports/${result.value.id}`,
+                                "_blank"
+                            );
+                            setExporting(null);
                         } else {
                             notifications.show({
                                 color: "red",
